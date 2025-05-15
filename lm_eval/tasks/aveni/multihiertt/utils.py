@@ -7,7 +7,7 @@ import math_verify
 import git
 from transformers import AutoTokenizer
 
-from lm_eval.tasks.finance_leaderboard.finance_utils import value_to_float, equal_value as equal_value_finance
+from lm_eval.tasks.aveni.utils import value_to_float, equal_value as equal_value_finance
 
 logger = logging.getLogger(__name__)
 

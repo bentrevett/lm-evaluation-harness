@@ -2,7 +2,7 @@ import json
 import logging
 import math_verify
 
-from lm_eval.tasks.finance_leaderboard.finance_utils import (
+from lm_eval.tasks.aveni.utils import (
     value_to_float,
     equal_value as equal_value_finance,
 )

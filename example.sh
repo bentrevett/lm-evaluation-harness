@@ -2,9 +2,9 @@ MODELS=(
     "Qwen/Qwen3-0.6B"
 )
 TASKS=(
-    #"finqa_all"
+    "finqa_all"
     "multihiertt"
-    #"tatqa_all"
+    "tatqa_all"
 )
 for MODEL_NAME in "${MODELS[@]}"
 do
@@ -18,7 +18,7 @@ do
              --batch_size "auto" \
              --apply_chat_template \
              --fewshot_as_multiturn \
-             --output_path "aveni/sft/results/sample-results" \
+             --output_path "results" \
              --log_samples \
              --write_out \
              --limit 10

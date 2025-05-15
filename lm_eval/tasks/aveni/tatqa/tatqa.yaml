@@ -1,0 +1,23 @@
+task: tatqa
+dataset_path: aveni-ai/aveni-bench-tat-qa
+
+training_split: train
+validation_split: valid
+test_split: test
+fewshot_split: valid
+num_fewshot: 4
+
+output_type: generate_until
+doc_to_text: "{{context}}\n\nQuestion: {{question}}\nPlease return answer as a list of spans like ['span1', 'span2', 'span3']\n\nAnswer:"
+doc_to_target: !function utils.doc_to_target
+
+
+metric_list:
+  - metric: list_match
+    aggregation: mean
+    higher_is_better: true
+    ignore_case : true
+  - metric: list_match_math_verify
+    aggregation: mean
+    higher_is_better: true
+    ignore_case : true

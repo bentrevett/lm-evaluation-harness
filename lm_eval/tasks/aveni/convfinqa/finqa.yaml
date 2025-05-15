@@ -1,0 +1,28 @@
+task: finqa
+
+dataset_path: aveni-ai/aveni-bench-convfinqa
+
+doc_to_text: !function utils.doc_to_text
+doc_to_target: !function utils.doc_to_target
+
+training_split: train
+validation_split: null
+test_split: test
+num_fewshot: 0
+
+generation_kwargs:
+  do_sample: false
+  until:
+    - "\n\n"
+    - 'Question:'
+    - </s>
+    - <|im_end|>
+output_type: generate_until
+
+metric_list:
+  - metric: !function utils.equal_value
+    aggregation: mean
+    higher_is_better: true
+  - metric: !function utils.equal_math_verify
+    aggregation: mean
+    higher_is_better: true

@@ -1,0 +1,4 @@
+task: multihiertt_hard
+include: common.yaml
+
+num_fewshot: 0 # Can be modified for larger models with a long context capabilities (over 16k)

@@ -1,0 +1,4 @@
+group: finqa_all_sft
+task:
+    - finqa_sft
+    - convfinqa_sft

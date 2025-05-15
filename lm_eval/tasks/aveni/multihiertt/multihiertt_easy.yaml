@@ -1,0 +1,6 @@
+task: multihiertt_easy
+include: common.yaml
+
+validation_split: valid
+fewshot_split: valid
+num_fewshot: 2

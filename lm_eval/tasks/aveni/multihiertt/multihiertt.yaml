@@ -1,0 +1,4 @@
+group: multihiertt
+task:
+- multihiertt_easy
+- multihiertt_hard

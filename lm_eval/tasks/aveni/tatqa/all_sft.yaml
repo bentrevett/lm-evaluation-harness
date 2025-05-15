@@ -1,0 +1,4 @@
+group: tatqa_all_sft
+task:
+    - tatqa_sft
+    - tathqa_sft

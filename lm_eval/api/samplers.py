@@ -75,6 +75,20 @@ class ContextSampler:
                 )
             self.docs = self.docs.select(fewshot_indices)
 
+    def _doc_target_to_labelled_examples(self, doc, doc_target):
+        """Custom function added by Aveni."""
+        if isinstance(doc_target, list):
+            metrics = {m["metric"] for m in self.config.metric_list}
+            if "list_match" in metrics or "list_match_math_verify" in metrics:
+                return str(doc_target)
+            else:
+                return str(doc_target[0])
+
+        if self.config.doc_to_choice is None or isinstance(doc_target, str):
+            return doc_target
+
+        return str(self.doc_to_choice(doc)[doc_target])
+
     def get_context(self, doc: dict, num_fewshot: int, gen_prefix: str = None):
         # draw an extra fewshot sample if using same split as evaluating on
         prefix = gen_prefix + " " if gen_prefix else ""
@@ -110,15 +124,19 @@ class ContextSampler:
                     )
                 labeled_examples += self.target_delimiter
                 labeled_examples += prefix
-                labeled_examples += (
-                    str(doc_target[0])
-                    if isinstance(doc_target, list)
-                    else doc_target
-                    if self.config.doc_to_choice is None or isinstance(doc_target, str)
-                    else str(self.doc_to_choice(doc)[doc_target])
+                # labeled_examples += (
+                #     str(doc_target[0])
+                #     if isinstance(doc_target, list)
+                #     else doc_target
+                #     if self.config.doc_to_choice is None or isinstance(doc_target, str)
+                #     else str(self.doc_to_choice(doc)[doc_target])
+                # )
+                # AVENIFIX
+                # above replaced by the _doc_target_to_labelled_examples function
+                labeled_examples += self._doc_target_to_labelled_examples(
+                    doc, doc_target,
                 )
                 labeled_examples += self.fewshot_delimiter
-
         return labeled_examples
 
     def get_chat_context(
@@ -151,21 +169,28 @@ class ContextSampler:
                 chat_history.append(
                     {
                         "role": "user",
-                        "content": doc_content
-                        if self.config.doc_to_choice is None
-                        or isinstance(doc_content, str)
-                        else self.doc_to_choice(doc)[doc_content],
+                        "content": (
+                            doc_content
+                            if self.config.doc_to_choice is None
+                            or isinstance(doc_content, str)
+                            else self.doc_to_choice(doc)[doc_content]
+                        ),
                     }
                 )
                 chat_history.append(
                     {
                         "role": "assistant",
-                        "content": prefix + str(doc_target[0])
-                        if isinstance(doc_target, list)
-                        else prefix + doc_target
-                        if self.config.doc_to_choice is None
-                        or isinstance(doc_target, str)
-                        else prefix + str(self.doc_to_choice(doc)[doc_target]),
+                        # "content": prefix + str(doc_target[0])
+                        # if isinstance(doc_target, list)
+                        # else prefix + doc_target
+                        # if self.config.doc_to_choice is None
+                        # or isinstance(doc_target, str)
+                        # else prefix + str(self.doc_to_choice(doc)[doc_target]),
+                        # AVENIFIX
+                        # above replaced by the _doc_target_to_labelled_examples function
+                        "content": self._doc_target_to_labelled_examples(
+                            doc, doc_target,
+                        ),
                     }
                 )
         else:

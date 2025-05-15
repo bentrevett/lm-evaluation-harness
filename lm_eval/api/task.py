@@ -1684,8 +1684,9 @@ class ConfigurableTask(Task):
                         # sometimes, a multiple_target dataset has exceptions where one doc has only one string answer
                         # print(gold)
                         gold = [gold]
-                    if metric == "exact_match":
-                        result = [result for _ in range(len(gold))]
+                    if metric in {"exact_match", "list_match", "list_match_math_verify"}:
+                        if metric == "exact_match":
+                            result = [result for _ in range(len(gold))]
                         scores = self._metric_fn_list[metric](
                             references=gold,
                             predictions=result,

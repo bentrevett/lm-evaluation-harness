@@ -1,16 +1,18 @@
+import ast
 import logging
 import math
 import random
 import re
 import string
 from collections.abc import Iterable
-from typing import List
+from typing import List, Union, Any
 
 import numpy as np
 import sacrebleu
+import math_verify
 
 from lm_eval.api.registry import register_aggregation, register_metric
-
+from lm_eval.utils import handle_arg_string
 
 eval_logger = logging.getLogger(__name__)
 
@@ -240,6 +242,92 @@ def exact_match_hf_evaluate(
 )
 def exact_match_fn(**kwargs):
     return exact_match_hf_evaluate(**kwargs)
+
+def handle_arg_string_math_verify(s):
+    """Try and parse result into string with math_verify."""
+    original_str = str(s)
+    result = math_verify.parse(original_str)
+    if not result:
+        return original_str
+    else:
+        _, parsed_str = result
+        # if we used math_verify.verify it would say 1 == 1.0
+        # but we check the set of math_verify.parse because it
+        # handles string preds/refs better, because of this
+        # we have to handle the 1.0 case ourselves.
+        parsed_str = parsed_str.removesuffix(".0")
+        return parsed_str
+
+# The metric compares two lists as sets (ignores duplicates and the order for elements).
+# Current implementation expects to strictly follow a format of:
+#   ['answer1', 'answer2', 'answer3']
+# This mean that e.g.
+#   "answer1" (no brackets)
+#   ('answer1', 'answer2', 'answer3') (wrong brackets)
+#   [ answer1, answer2 ] (no quotes, unless it is a number)
+# would be considered an incorrect sample.
+# See test_utils.py for examples.
+def list_match_evaluate(
+    predictions: Union[str, List[str]],
+    references: Union[List[Any], List[List[Any]]],
+    ignore_case: bool = False,
+    use_math_verify: bool = False,
+):
+    # Map a simple sample
+    if not isinstance(predictions, list):
+        predictions = [predictions]
+        references = [references]
+
+    scores: List[int] = []
+    for pred, ref in zip(predictions, references):
+
+        if ignore_case:
+            pred = pred.lower()
+            ref = [r.lower() if isinstance(r, str) else r for r in ref]
+        
+        if use_math_verify:
+            ref = [handle_arg_string_math_verify(r) for r in ref]
+        ref = set(ref)
+        try:
+            pred = ast.literal_eval(pred)
+            assert isinstance(pred, list)
+            if use_math_verify:
+                pred = [handle_arg_string_math_verify(p) for p in pred]
+            else:
+                pred = [handle_arg_string(str(p)) for p in pred]
+            pred = set(pred)
+        except (AssertionError, SyntaxError, ValueError):
+            eval_logger.debug(
+                f"Model did not produces a parsable array. Casting to an empty result.\nModel output: '{pred}'"
+            )
+            pred = set()
+
+        scores.append(int(
+            len(pred) == len(ref) == len(pred.intersection(ref))
+        ))
+    if use_math_verify:
+        return {"list_match_math_verify": np.mean(scores)}
+    else:
+        return {"list_match": np.mean(scores)}
+
+
+@register_metric(
+    metric="list_match",
+    higher_is_better=True,
+    output_type="generate_until",
+    aggregation="mean",
+)
+def list_match_fn(**kwargs):
+    return list_match_evaluate(**kwargs, use_math_verify=False)
+
+@register_metric(
+    metric="list_match_math_verify",
+    higher_is_better=True,
+    output_type="generate_until",
+    aggregation="mean",
+)
+def list_match_math_verify_fn(**kwargs):
+    return list_match_evaluate(**kwargs, use_math_verify=True)
 
 
 @register_metric(

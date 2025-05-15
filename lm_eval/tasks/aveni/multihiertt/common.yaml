@@ -1,6 +1,5 @@
 dataset_path: aveni-ai/aveni-bench-multihiertt
 
-training_split: train
 test_split: test
 
 doc_to_text: "{{context}}\n\nQuestion: {{question}}\n\nAnswer:"

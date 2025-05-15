@@ -1,6 +1,6 @@
 task: multihiertt_easy_sft
 include: common_sft.yaml
 
-validation_split: valid
-fewshot_split: valid
+validation_split: test
+fewshot_split: test
 num_fewshot: 2

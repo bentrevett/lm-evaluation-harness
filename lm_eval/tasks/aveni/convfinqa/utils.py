@@ -1,83 +1,9 @@
-import json
-import logging
 import math_verify
 
 from lm_eval.tasks.aveni.utils import (
     value_to_float,
     equal_value as equal_value_finance,
 )
-
-logger = logging.getLogger(__name__)
-
-
-def preprocess_data(path="../../../../lm-eval-harness-data/convfinqa"):
-    # ConvFinQA
-    for split in ["dev_turn", "train_turn"]:
-        with open(f"{path}/raw/{split}.json", "r") as f_in:
-            data = json.load(f_in)
-
-        with open(f"{path}/{split}.jsonl", "w") as f_out:
-            for d in data:
-                current_dialogue_step = d["annotation"]["turn_ind"]
-                preprocessed = dict(
-                    pre_text=d["pre_text"],
-                    post_text=d["post_text"],
-                    annotation=dict(
-                        amt_table=d["annotation"]["amt_table"],
-                        dialogue_break=d["annotation"]["cur_dial"][:-1],
-                        exe_ans_list=[
-                            str(a)
-                            for a in d["annotation"]["exe_ans_list"][
-                                :current_dialogue_step
-                            ]
-                        ],
-                    ),
-                    qa=dict(
-                        question=d["annotation"]["cur_dial"][-1],
-                        answer=value_to_float(
-                            d["annotation"]["exe_ans_list"][current_dialogue_step]
-                        ),
-                    ),
-                )
-
-                # ConvFinQA
-                if preprocessed["qa"]["answer"]:
-                    f_out.write(json.dumps(preprocessed, ensure_ascii=False) + "\n")
-                else:
-                    logger.warning(f"Ignoring a sample due to empty answer.")
-
-    # FinQA (direct)
-    for split in ["dev", "train"]:
-
-        with open(f"{path}/raw/{split}.json", "r") as f_in:
-            data = json.load(f_in)
-
-        with open(f"{path}/{split}_direct.jsonl", "w") as f_out:
-            for d in data:
-                # Iterate over possible question dictionary fields
-                for key in ["qa", "qa_0", "qa_1"]:
-                    if key not in d or not d[key]["answer"]:
-                        continue
-
-                    preprocessed = dict(
-                        pre_text=d["pre_text"],
-                        post_text=d["post_text"],
-                        annotation=dict(
-                            amt_table=d["annotation"]["amt_table"],
-                            dialogue_break=[],  # Direct QA setup (FinQA)
-                            exe_ans_list=[],  # Direct QA setup (FinQA)
-                        ),
-                        qa=dict(
-                            question=d[key]["question"],
-                            answer=value_to_float(d[key]["exe_ans"]),
-                        ),
-                    )
-
-                    # ConvFinQA
-                    if preprocessed["qa"]["answer"]:
-                        f_out.write(json.dumps(preprocessed, ensure_ascii=False) + "\n")
-                    else:
-                        logger.warning(f"Ignoring a sample due to empty answer.")
 
 
 def equal_value(predictions, references, tolerance=0):
@@ -173,7 +99,3 @@ def doc_to_text_sft(doc):
 
 def doc_to_target(doc):
     return doc["qa"]["answer"]
-
-
-if __name__ == "__main__":
-    preprocess_data(path="../../../../lm-eval-harness-data/convfinqa")
